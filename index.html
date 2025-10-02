@@ -4,10 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Catatan Harian</title>
-
-  <!-- jsPDF CDN, tanpa isi fungsi di dalamnya -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
   <style>
     :root {
       --bg: #f0f0f0;
@@ -95,13 +92,6 @@
       font-size: 11px;
       color: gray;
     }
-    .edit-input {
-      width: 100%;
-      padding: 6px;
-      font-size: 14px;
-      border-radius: 6px;
-      border: 1px solid #aaa;
-    }
   </style>
 </head>
 <body>
@@ -145,6 +135,7 @@
     function getUsers() {
       return JSON.parse(localStorage.getItem("users") || "{}");
     }
+
     function saveUsers(users) {
       localStorage.setItem("users", JSON.stringify(users));
     }
@@ -168,7 +159,6 @@
       const username = document.getElementById("loginUser").value.trim();
       const pin = document.getElementById("loginPin").value.trim();
       const users = getUsers();
-      console.log("Login attempt:", username, pin, users);
       if (!users[username] || users[username].pin !== pin) {
         return alert("Username atau PIN salah.");
       }
@@ -261,12 +251,11 @@
     function exportToPDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
-      const users = getUsers();
-      const notes = users[currentUser]?.notes || [];
+      const notes = getUsers()[currentUser]?.notes || [];
       doc.setFontSize(12);
       doc.text(`Catatan - ${currentUser}`, 10, 10);
       let y = 20;
-      notes.forEach((note, i) => {
+      notes.forEach(note => {
         doc.text(`- ${note.text}`, 10, y);
         y += 10;
         if (y > 280) {
@@ -291,7 +280,7 @@
           renderNotes();
           alert("Impor berhasil.");
         } catch {
-          alert("Gagal membaca JSON.");
+          alert("Gagal membaca file JSON.");
         }
       };
       reader.readAsText(file);
@@ -302,9 +291,16 @@
     }
 
     function showChangePinForm() {
-      const form = document.getElementById("changePinForm");
-      form.classList.toggle("hidden");
+      document.getElementById("changePinForm").classList.remove("hidden");
     }
+
+    function hideChangePinForm() {
+      document.getElementById("changePinForm").classList.add("hidden");
+      document.getElementById("oldPin").value = "";
+      document.getElementById("newPin").value = "";
+      document.getElementById("confirmPin").value = "";
+    }
+
     function changePin() {
       const oldPin = document.getElementById("oldPin").value.trim();
       const newPin = document.getElementById("newPin").value.trim();
@@ -314,32 +310,24 @@
       if (!newPin || newPin !== confirmPin) return alert("PIN baru tidak cocok.");
       users[currentUser].pin = newPin;
       saveUsers(users);
-      document.getElementById("oldPin").value = "";
-      document.getElementById("newPin").value = "";
-      document.getElementById("confirmPin").value = "";
-      document.getElementById("changePinForm").classList.add("hidden");
+      hideChangePinForm();
       alert("PIN berhasil diganti.");
-    }
-    function hideChangePinForm() {
-      document.getElementById("changePinForm").classList.add("hidden");
-      document.getElementById("oldPin").value = "";
-      document.getElementById("newPin").value = "";
-      document.getElementById("confirmPin").value = "";
     }
 
     let idleTimer;
     function resetIdleTimer() {
       clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
-        alert("Logout karena tidak aktif 2 menit.");
+        alert("Kamu telah logout karena tidak aktif selama 2 menit.");
         logout();
       }, 2 * 60 * 1000);
     }
-    ["click", "mousemove", "keydown"].forEach(ev => {
-      document.addEventListener(ev, resetIdleTimer, true);
+
+    ["click", "mousemove", "keydown"].forEach(event => {
+      document.addEventListener(event, resetIdleTimer, true);
     });
 
-    window.onload = function() {
+    window.onload = function () {
       const savedUser = localStorage.getItem("currentUser");
       if (savedUser && getUsers()[savedUser]) {
         currentUser = savedUser;
@@ -349,14 +337,9 @@
         renderNotes();
         resetIdleTimer();
       }
-    };
+    }
   </script>
 </body>
 </html>
-"""
 
-# Simpan file
-Path(final_fixed_path).write_text(fixed_html.strip(), encoding="utf-8")
-final_fixed_path
-::contentReference[oaicite:0]{index=0}
 
