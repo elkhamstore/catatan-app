@@ -110,6 +110,7 @@
       let y = 20;
       notes.forEach((note, i) => {
         doc.text(`- ${note.text}`, 10, y);
+        y+10:
       });
       doc.save(`catatan-${currentUser}.pdf`);
     }
