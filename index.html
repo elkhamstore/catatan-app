@@ -3,209 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Catatan Harian Multi-Akun (Edit)</title>
+  <title>Catatan Harian</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    :root {
-      --bg: #f0f0f0;
-      --fg: #000;
-      --box: #fff;
-      --accent: #4CAF50;
-      --button-text: #fff;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #1e1e1e;
-        --fg: #f0f0f0;
-        --box: #2a2a2a;
-        --accent: #81c784;
-        --button-text: #000;
-      }
-    }
-    body.dark {
-      --bg: #1e1e1e;
-      --fg: #f0f0f0;
-      --box: #2a2a2a;
-      --accent: #81c784;
-      --button-text: #000;
-    }
-    body {
-      font-family: Arial, sans-serif;
-      background: var(--bg);
-      color: var(--fg);
-      transition: background 0.3s, color 0.3s;
-    }
-    .container {
-      max-width: 500px;
-      margin: 60px auto;
-      background: var(--box);
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    h2 { text-align: center; }
-    input, textarea {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-      background: var(--bg);
-      color: var(--fg);
-    }
-    button {
-      width: 100%;
-      padding: 10px;
-      background: var(--accent);
-      color: var(--button-text);
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      margin-bottom: 10px;
-    }
-    button:hover { opacity: 0.9; }
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    input, textarea { width: 100%; padding: 10px; margin: 5px 0; }
+    button { padding: 10px; margin: 5px 0; }
     .hidden { display: none; }
-    ul {
-      list-style: none;
-      padding: 0;
-      margin-top: 20px;
-    }
-    li {
-      background: #eee;
-      margin-bottom: 10px;
-      padding: 10px;
-      border-radius: 8px;
-      position: relative;
-    }
-    body.dark li { background: #3a3a3a; }
-    .delete {
-      position: absolute;
-      right: 10px;
-      top: 10px;
-      color: red;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .timestamp {
-      font-size: 11px;
-      color: gray;
-    }
-    .edit-input {
-      width: 100%;
-      padding: 6px;
-      font-size: 14px;
-      border-radius: 6px;
-      border: 1px solid #aaa;
-    }
   </style>
 </head>
 <body>
-  <div class="container" id="authContainer">
-    <h2>👤 Login Akun</h2>
+  <div id="authContainer">
+    <h2>Login</h2>
     <input type="text" id="loginUser" placeholder="Username" />
     <input type="password" id="loginPin" placeholder="PIN" />
     <button onclick="login()">Login</button>
-    <hr>
-    <h2>📝 Daftar Akun Baru</h2>
-    <input type="text" id="regUser" placeholder="Username baru" />
-    <input type="password" id="regPin" placeholder="PIN baru" />
+    <h2>Daftar</h2>
+    <input type="text" id="regUser" placeholder="Username Baru" />
+    <input type="password" id="regPin" placeholder="PIN Baru" />
     <button onclick="register()">Daftar</button>
   </div>
 
-  <div class="container hidden" id="noteContainer">
-    <h2 id="welcomeTitle">📒 Catatan</h2>
-    <button onclick="logout()">Logout</button>
-    <button onclick="toggleDark()">🌓 Toggle Dark Mode</button>
-    <button onclick="showChangePinForm()">🔒 Ganti PIN</button>
+  <div id="noteContainer" class="hidden">
+    <h2 id="welcomeTitle"></h2>
     <textarea id="noteInput" placeholder="Tulis catatan..."></textarea>
     <button onclick="addNote()">Tambah Catatan</button>
-    <button onclick="exportToPDF()">🖨️ Ekspor ke PDF</button>
-    <button onclick="exportToJSON()">📤 Ekspor ke JSON</button>
-    <input type="file" id="importInput" accept=".json" onchange="importFromJSON()" />
     <ul id="noteList"></ul>
-  <div id="changePinForm" class="hidden" style="margin-top: 20px; position: relative;">
-  <span onclick="hideChangePinForm()" style="position:absolute; top:0; right:0; font-weight:bold; cursor:pointer;">✖</span>
-    <h3>🔒 Ganti PIN</h3>
-    <input type="password" id="oldPin" placeholder="PIN Lama" />
-    <input type="password" id="newPin" placeholder="PIN Baru" />
-    <input type="password" id="confirmPin" placeholder="Konfirmasi PIN Baru" />
-    <button onclick="changePin()">Simpan PIN Baru</button>
+    <button onclick="exportToPDF()">Ekspor ke PDF</button>
+    <button onclick="logout()">Logout</button>
   </div>
 
-  </div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
-    async function exportToPDF() {
-      const {{ jsPDF }} = window.jspdf;
-      const doc = new jsPDF();
-      const users = getUsers();
-      const notes = users[currentUser]?.notes || [];
-
-      doc.setFont("helvetica");
-      doc.setFontSize(12);
-      doc.text(`Catatan - ${currentUser}`, 10, 10);
-
-      let y = 20;
-      notes.forEach((note, i) => {
-        const text = `- ${note.text}`;
-        const date = new Date(note.timestamp).toLocaleString("id-ID");
-        doc.text(text, 10, y);
-        y += 6;
-        doc.setFontSize(10);
-        doc.text(`  (${date})`, 12, y);
-        doc.setFontSize(12);
-        y += 8;
-        if (y > 280) {{
-          doc.addPage();
-          y = 20;
-        }}
-      });
-
-      doc.save(`catatan-${currentUser}.pdf`);
-    }
-
-
-    function showChangePinForm() {
-      const form = document.getElementById("changePinForm");
-      form.classList.toggle("hidden");
-    }
-
-    function changePin() {
-      const oldPin = document.getElementById("oldPin").value.trim();
-      const newPin = document.getElementById("newPin").value.trim();
-      const confirmPin = document.getElementById("confirmPin").value.trim();
-      const users = getUsers();
-
-      if (users[currentUser].pin !== oldPin) {
-        return alert("PIN lama salah.");
-      }
-
-      if (!newPin || newPin !== confirmPin) {
-        return alert("PIN baru tidak cocok atau kosong.");
-      }
-
-      users[currentUser].pin = newPin;
-      saveUsers(users);
-
-      // Bersihkan input
-      document.getElementById("oldPin").value = "";
-      document.getElementById("newPin").value = "";
-      document.getElementById("confirmPin").value = "";
-      document.getElementById("changePinForm").classList.add("hidden");
-
-      alert("PIN berhasil diganti.");
-    }
-
-
-    function hideChangePinForm() {
-      document.getElementById("changePinForm").classList.add("hidden");
-      document.getElementById("oldPin").value = "";
-      document.getElementById("newPin").value = "";
-      document.getElementById("confirmPin").value = "";
-    }
-
-</script>
   <script>
     let currentUser = null;
 
@@ -229,7 +56,6 @@
       document.getElementById("regPin").value = "";
       document.getElementById("loginUser").value = username;
       document.getElementById("loginPin").value = "";
-      document.getElementById("loginPin").focus();
       alert("Pendaftaran berhasil. Silakan login.");
     }
 
@@ -244,9 +70,8 @@
       localStorage.setItem("currentUser", currentUser);
       document.getElementById("authContainer").classList.add("hidden");
       document.getElementById("noteContainer").classList.remove("hidden");
-      document.getElementById("welcomeTitle").innerText = `📒 Catatan (${currentUser})`;
+      document.getElementById("welcomeTitle").innerText = `Catatan (${currentUser})`;
       renderNotes();
-      resetIdleTimer();
     }
 
     function logout() {
@@ -264,99 +89,30 @@
       renderNotes();
     }
 
-    function deleteNote(index) {
-      if (!confirm("Yakin ingin menghapus catatan ini?")) return;
-      const users = getUsers();
-      users[currentUser].notes.splice(index, 1);
-      saveUsers(users);
-      renderNotes();
-    }
-
-    function editNote(index, newText) {
-      const users = getUsers();
-      users[currentUser].notes[index].text = newText;
-      saveUsers(users);
-      renderNotes();
-    }
-
-    
-function renderNotes() {
-  const users = getUsers();
-  const notes = users[currentUser]?.notes || [];
-  const list = document.getElementById("noteList");
-  list.innerHTML = "";
-  notes.forEach((note, i) => {
-    const li = document.createElement("li");
-
-    const span = document.createElement("span");
-    span.textContent = note.text;
-    span.style.display = "inline-block";
-    span.style.width = "100%";
-    span.style.cursor = "pointer";
-    span.onclick = function () {
-      span.contentEditable = true;
-      span.focus();
-    };
-    span.onblur = function () {
-      span.contentEditable = false;
-      editNote(i, span.textContent.trim());
-    };
-    span.onkeydown = function (e) {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        span.blur();
-      }
-    };
-
-    const time = document.createElement("div");
-    time.className = "timestamp";
-    time.textContent = new Date(note.timestamp).toLocaleString("id-ID");
-
-    const del = document.createElement("span");
-    del.className = "delete";
-    del.textContent = "×";
-    del.onclick = () => deleteNote(i);
-
-    li.appendChild(span);
-    li.appendChild(time);
-    li.appendChild(del);
-    list.appendChild(li);
-  });
-}
-
-
-    function exportToJSON() {
+    function renderNotes() {
       const users = getUsers();
       const notes = users[currentUser]?.notes || [];
-      const blob = new Blob([JSON.stringify(notes, null, 2)], { type: "application/json" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `catatan-${currentUser}.json`;
-      link.click();
+      const list = document.getElementById("noteList");
+      list.innerHTML = "";
+      notes.forEach((note, i) => {
+        const li = document.createElement("li");
+        li.textContent = note.text + " (" + new Date(note.timestamp).toLocaleString("id-ID") + ")";
+        list.appendChild(li);
+      });
     }
 
-    function importFromJSON() {
-      const file = document.getElementById("importInput").files[0];
-      if (!file || !currentUser) return;
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        try {
-          const imported = JSON.parse(e.target.result);
-          if (!Array.isArray(imported)) return alert("Format file tidak valid.");
-          const users = getUsers();
-          users[currentUser].notes = users[currentUser].notes.concat(imported);
-          saveUsers(users);
-          renderNotes();
-          alert("Impor berhasil.");
-        } catch {
-          alert("Gagal membaca file JSON.");
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    function toggleDark() {
-      document.body.classList.toggle("dark");
+    async function exportToPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const users = getUsers();
+      const notes = users[currentUser]?.notes || [];
+      doc.text(`Catatan - ${currentUser}`, 10, 10);
+      let y = 20;
+      notes.forEach((note, i) => {
+        doc.text(`- ${note.text}`, 10, y);
+        y += 10;
+      });
+      doc.save(`catatan-${currentUser}.pdf`);
     }
 
     window.onload = function () {
@@ -365,94 +121,10 @@ function renderNotes() {
         currentUser = savedUser;
         document.getElementById("authContainer").classList.add("hidden");
         document.getElementById("noteContainer").classList.remove("hidden");
-        document.getElementById("welcomeTitle").innerText = `📒 Catatan (${currentUser})`;
+        document.getElementById("welcomeTitle").innerText = `Catatan (${currentUser})`;
         renderNotes();
-        resetIdleTimer();
       }
     }
-
-    // === [Auto Logout After Idle] ===
-    let idleTimer;
-    function resetIdleTimer() {
-      clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => {
-        alert("Kamu telah logout karena tidak aktif selama 2 menit.");
-        logout();
-      }, 2 * 60 * 1000);
-    }
-    ["click", "mousemove", "keydown"].forEach(event => {
-      document.addEventListener(event, resetIdleTimer, true);
-    });
-  
-    async function exportToPDF() {
-      const {{ jsPDF }} = window.jspdf;
-      const doc = new jsPDF();
-      const users = getUsers();
-      const notes = users[currentUser]?.notes || [];
-
-      doc.setFont("helvetica");
-      doc.setFontSize(12);
-      doc.text(`Catatan - ${currentUser}`, 10, 10);
-
-      let y = 20;
-      notes.forEach((note, i) => {
-        const text = `- ${note.text}`;
-        const date = new Date(note.timestamp).toLocaleString("id-ID");
-        doc.text(text, 10, y);
-        y += 6;
-        doc.setFontSize(10);
-        doc.text(`  (${date})`, 12, y);
-        doc.setFontSize(12);
-        y += 8;
-        if (y > 280) {{
-          doc.addPage();
-          y = 20;
-        }}
-      });
-
-      doc.save(`catatan-${currentUser}.pdf`);
-    }
-
-
-    function showChangePinForm() {
-      const form = document.getElementById("changePinForm");
-      form.classList.toggle("hidden");
-    }
-
-    function changePin() {
-      const oldPin = document.getElementById("oldPin").value.trim();
-      const newPin = document.getElementById("newPin").value.trim();
-      const confirmPin = document.getElementById("confirmPin").value.trim();
-      const users = getUsers();
-
-      if (users[currentUser].pin !== oldPin) {
-        return alert("PIN lama salah.");
-      }
-
-      if (!newPin || newPin !== confirmPin) {
-        return alert("PIN baru tidak cocok atau kosong.");
-      }
-
-      users[currentUser].pin = newPin;
-      saveUsers(users);
-
-      // Bersihkan input
-      document.getElementById("oldPin").value = "";
-      document.getElementById("newPin").value = "";
-      document.getElementById("confirmPin").value = "";
-      document.getElementById("changePinForm").classList.add("hidden");
-
-      alert("PIN berhasil diganti.");
-    }
-
-
-    function hideChangePinForm() {
-      document.getElementById("changePinForm").classList.add("hidden");
-      document.getElementById("oldPin").value = "";
-      document.getElementById("newPin").value = "";
-      document.getElementById("confirmPin").value = "";
-    }
-
-</script>
+  </script>
 </body>
 </html>
